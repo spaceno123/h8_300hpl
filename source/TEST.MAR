@@ -1,0 +1,143 @@
+;
+;	Program	TEST.MAR
+;	Date	2000/9/30 .. 2000/9/30
+;	Copyright (C) 2000 by AKIYA
+;
+
+	;--------------
+	;--- define ---
+	;--------------
+
+IOREGS_OFFSET	.equ	H'ff0000	; 24:H'ff0000(16M), 20:H'f0000(1M)
+
+SMR1	.equ	H'ffb8+IOREGS_OFFSET
+BRR1	.equ	H'ffb9+IOREGS_OFFSET
+SCR1	.equ	H'ffba+IOREGS_OFFSET
+TDR1	.equ	H'ffbb+IOREGS_OFFSET
+SSR1	.equ	H'ffbc+IOREGS_OFFSET
+
+TDRE1B	.equ	7
+RDRF1B	.equ	6
+ORER1B	.equ	5
+FER1B	.equ	4
+PER1B	.equ	3
+
+TDRE1	.bequ	TDRE1B,SSR1
+RDRF1	.bequ	RDRF1B,SSR1
+ORER1	.bequ	ORER1B,SSR1
+FER1	.bequ	FER1B,SSR1
+PER1	.bequ	PER1B,SSR1
+
+TSTR	.equ	H'ff60+IOREGS_OFFSET
+
+TCR1	.equ	H'ff6e+IOREGS_OFFSET
+TIER1	.equ	H'ff70+IOREGS_OFFSET
+TSR1	.equ	H'ff71+IOREGS_OFFSET
+GRA1	.equ	H'ff74+IOREGS_OFFSET
+
+	;////////////////////
+	;/// vector table ///
+	;////////////////////
+
+	.section	V, CODE, ALIGN=2
+
+	.org	0		; reset vector
+	.data.l	setup
+
+	.org	28*4		; itu channel 1
+	.data.l	int_1ms
+
+	.org	59*4		; for test @@xx:8
+	.data.l	putc
+
+	;////////////////////
+	;/// test program ///
+	;////////////////////
+
+	.section	P, CODE, ALIGN=2
+
+setup:
+	mov.l	#stack_init,sp	; stack set
+	orc	#B'11000000,ccr	; interrupt disable
+
+	;* SCI pre-initialize *
+	mov.b	#B'00000000,r0l	; TIE=0,RIE=0,TE=0,RE=0,MPIE=0,TEIE=0,CKE=00
+	mov.b	r0l,@SCR1:8
+	mov.b	#B'00000000,r0l	; C/A=0,CHR=0,PE=0,O/E=0,STOP=0,MP=0,CKS=00
+	mov.b	r0l,@SMR1:8
+	mov.b	#(16*1000000/(32*38400))-1,r0l ; clock=16MHz,n=0,B=38400bit/s
+	mov.b	r0l,@BRR1:8
+	;* 1bit wait *
+	inc.b	r0l		; for -1
+	mov.b	#32/(2+2),r0h
+	mulxu.b	r0h,r0
+pl_start_0
+	dec.w	#1,r0		; 2 state
+	bne	pl_start_0:8	; 2 state
+	;* SCI post-initialize *
+	bclr	RDRF1
+	bclr	ORER1
+	bclr	FER1
+	bclr	PER1
+	mov.b	#B'00100000,r0l	; TIE=0,RIE=0,TE=1,RE=0,MPIE=0,TEIE=0,CKE=00
+	mov.b	r0l,@SCR1:8
+
+	;* ITU 1 (1msec interval) *
+	mov.b	#B'10100000,r0l	; CCLR=01:GRA,CKEG=00,TPSC=000:CLK(16MHz)
+	mov.b	r0l,@TCR1
+	mov.w	#(16*1000000/1000)-1,r0	; 1msec count at 16MHz
+	mov.w	r0,@GRA1
+	mov.b	#B'11111001,r0l	; OVIE=0,IMIEB=0,IMIBA=1
+	mov.b	r0l,@TIER1
+	bset	#1,@TSTR	; start !
+
+	andc	#B'00111111,ccr	; interrupt enable
+
+	;* loop *
+	mov.l	@tmr_1ms,er1
+loop	mov.l	@tmr_1ms,er0
+	sub.l	er1,er0
+	cmp.l	#500,er0
+	blo	loop:8
+	add.l	#500,er1
+	mov.b	#">",r0l
+	jsr	@@(59*4):8
+	bra	loop:8
+
+putc:
+	bld	TDRE1
+	bcc	putc:8
+	mov.b	r0l,@TDR1:8
+	bclr	TDRE1
+	rts
+
+	;/////////////
+	;/// timer ///
+	;/////////////
+
+	.section	D, DATA, ALIGN=2
+
+tmr_1ms
+	.res.l	1	; counter
+
+	.section	P, CODE, ALIGN=2
+
+int_1ms:
+	bclr	#0,@TSR1
+	push	er0
+	mov.l	@tmr_1ms,er0
+	inc.l	#1,er0
+	mov.l	er0,@tmr_1ms
+	pop	er0
+	rte
+
+	;/////////////
+	;/// stack ///
+	;/////////////
+
+	.section	SE, DATA, ALIGN=2
+	.export	stack_init
+stack_init
+
+	.end
+

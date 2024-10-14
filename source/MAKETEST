@@ -1,0 +1,45 @@
+### for MAKE Version 4.0  Copyright (c) 1987, 1996 Borland International ###
+
+#=== make switch's ===
+# set RAM for Program Loader
+LOCATION = RAM
+#LOCATION = ROM
+
+#=== macro's ===
+ASM = A38H $<-CPU=300HA:24 #-DEBUG
+LNK = L38H -SUBCOMMAND=$&.sub #-DEBUG
+CNV = C38H $<
+#===============
+
+#=== roule's ===
+.mar.obj:
+	$(ASM) # > $&.tag
+.abs.mot:
+	$(CNV)
+#===============
+
+#--- link's ---
+TEST = test.obj
+
+#--- location ---
+!if $(LOCATION) == RAM
+STA = V,P,D(0FFEF10)
+!else
+STA = V,P(0),D(0FFEF10)
+!endif
+
+#--- final target ---
+test.mot:	test.abs
+
+#--- make .abs ---
+test.abs:	$(TEST) maketest
+	copy &&!
+OUTPUT $&
+INPUT $(TEST)
+START $(STA)
+START SE(0FFFF10)
+PRINT $&
+EXIT
+! $&.sub > nul
+	$(LNK)
+

@@ -1,0 +1,1140 @@
+;
+;	Program	PL.MAR
+;	Date	2000/9/20 .. 2000/9/30
+;	Copyright (C) 2000 by AKIYA
+;
+;--- up date ---
+; 2000/9/20	new
+; 2000/9/30	ver.0.01
+; 2000/11/15	ver.0.02 change check sum compare number for S-format standard.
+;
+
+;--- compile switch's ---
+; if you can use ".aif" then cat all ";c;"
+;c;VEC_JMP	.equ	0	; 1 then vector address jump code
+;c;DWR_CMP	.equ	1	; 1 then data write compeare check
+
+;--- define ---
+CR	.equ	H'0d
+LF	.equ	H'0a
+
+	;:::::::::::
+	;::: SCI :::
+	;:::::::::::
+
+	.section	DEBUG_SCI, COMMON, ALIGN=2
+
+SMRx	.res.b	1
+BRRx	.res.b	1
+SCRx	.res.b	1
+TDRx	.res.b	1
+SSRx	.res.b	1
+RDRx	.res.b	1
+
+TDRExB	.equ	7
+RDRFxB	.equ	6
+ORERxB	.equ	5
+FERxB	.equ	4
+PERxB	.equ	3
+TENDxB	.equ	2
+
+TDREx	.bequ	TDRExB,SSRx
+RDRFx	.bequ	RDRFxB,SSRx
+ORERx	.bequ	ORERxB,SSRx
+FERx	.bequ	FERxB,SSRx
+PERx	.bequ	PERxB,SSRx
+TENDx	.bequ	TENDxB,SSRx
+
+	;////////////////////
+	;/// vector table ///
+	;////////////////////
+
+	.section	V, CODE, ALIGN=2
+
+	.import	load_top
+
+	.data.l	pl_start	; 0 reset vector
+	.data.l	0		; 1(system reserve)
+	.data.l	0		; 2(system reserve)
+	.data.l	0		; 3(system reserve)
+	.data.l	0		; 4(system reserve)
+	.data.l	0		; 5(system reserve)
+	.data.l	0		; 6(system reserve)
+;c; .aif VEC_JMP eq 1
+;c;	.data.l	load_top+(7*4)	; 7 NMI
+;c;	.data.l	load_top+(8*4)	; 8 TRAP 0
+;c;	.data.l	load_top+(9*4)	; 9 TRAP 1
+;c;	.data.l	load_top+(10*4)	;10 TRAP 2
+;c;	.data.l	load_top+(11*4)	;11 TRAP 3
+;c;	.data.l	load_top+(12*4)	;12 IRQ0
+;c;	.data.l	load_top+(13*4)	;13 IRQ1
+;c;	.data.l	load_top+(14*4)	;14 IRQ2
+;c;	.data.l	load_top+(15*4)	;15 IRQ3
+;c;	.data.l	load_top+(16*4)	;16 IRQ4
+;c;	.data.l	load_top+(17*4)	;17 IRQ5
+;c;	.data.l	load_top+(18*4)	;18(system reserve)
+;c;	.data.l	load_top+(19*4)	;19(system reserve)
+;c;	.data.l	load_top+(20*4)	;20
+;c;	.data.l	load_top+(21*4)	;21
+;c;	.data.l	load_top+(22*4)	;22
+;c;	.data.l	load_top+(23*4)	;23
+;c;	.data.l	load_top+(24*4)	;24
+;c;	.data.l	load_top+(25*4)	;25
+;c;	.data.l	load_top+(26*4)	;26
+;c;	.data.l	load_top+(27*4)	;27
+;c;	.data.l	load_top+(28*4)	;28
+;c;	.data.l	load_top+(29*4)	;29
+;c;	.data.l	load_top+(30*4)	;30
+;c;	.data.l	load_top+(31*4)	;31
+;c;	.data.l	load_top+(32*4)	;32
+;c;	.data.l	load_top+(33*4)	;33
+;c;	.data.l	load_top+(34*4)	;34
+;c;	.data.l	load_top+(35*4)	;35
+;c;	.data.l	load_top+(36*4)	;36
+;c;	.data.l	load_top+(37*4)	;37
+;c;	.data.l	load_top+(38*4)	;38
+;c;	.data.l	load_top+(39*4)	;39
+;c;	.data.l	load_top+(40*4)	;40
+;c;	.data.l	load_top+(41*4)	;41
+;c;	.data.l	load_top+(42*4)	;42
+;c;	.data.l	load_top+(43*4)	;43
+;c;	.data.l	load_top+(44*4)	;44
+;c;	.data.l	load_top+(45*4)	;45
+;c;	.data.l	load_top+(46*4)	;46
+;c;	.data.l	load_top+(47*4)	;47
+;c;	.data.l	load_top+(48*4)	;48
+;c;	.data.l	load_top+(49*4)	;49
+;c;	.data.l	load_top+(50*4)	;50
+;c;	.data.l	load_top+(51*4)	;51
+;c;	.data.l	load_top+(52*4)	;52
+;c;	.data.l	load_top+(53*4)	;53
+;c;	.data.l	load_top+(54*4)	;54
+;c;	.data.l	load_top+(55*4)	;55
+;c;	.data.l	load_top+(56*4)	;56
+;c;	.data.l	load_top+(57*4)	;57
+;c;	.data.l	load_top+(58*4)	;58
+;c;	.data.l	load_top+(59*4)	;59
+;c;	.data.l	load_top+(60*4)	;60
+;c;	.data.l	load_top+(61*4)	;61
+;c;	.data.l	load_top+(62*4)	;62
+;c;	.data.l	load_top+(63*4)	;63
+;c; .aelse
+	.data.l	vec_7		; 7 NMI
+	.data.l	vec_8		; 8 TRAP 0
+	.data.l	vec_9		; 9 TRAP 1
+	.data.l	vec_10		;10 TRAP 2
+	.data.l	vec_11		;11 TRAP 3
+	.data.l	vec_12		;12 IRQ0
+	.data.l	vec_13		;13 IRQ1
+	.data.l	vec_14		;14 IRQ2
+	.data.l	vec_15		;15 IRQ3
+	.data.l	vec_16		;16 IRQ4
+	.data.l	vec_17		;17 IRQ5
+	.data.l	vec_18		;18(system reserve)
+	.data.l	vec_19		;19(system reserve)
+	.data.l	vec_20		;20
+	.data.l	vec_21		;21
+	.data.l	vec_22		;22
+	.data.l	vec_23		;23
+	.data.l	vec_24		;24
+	.data.l	vec_25		;25
+	.data.l	vec_26		;26
+	.data.l	vec_27		;27
+	.data.l	vec_28		;28
+	.data.l	vec_29		;29
+	.data.l	vec_30		;30
+	.data.l	vec_31		;31
+	.data.l	vec_32		;32
+	.data.l	vec_33		;33
+	.data.l	vec_34		;34
+	.data.l	vec_35		;35
+	.data.l	vec_36		;36
+	.data.l	vec_37		;37
+	.data.l	vec_38		;38
+	.data.l	vec_39		;39
+	.data.l	vec_40		;40
+	.data.l	vec_41		;41
+	.data.l	vec_42		;42
+	.data.l	vec_43		;43
+	.data.l	vec_44		;44
+	.data.l	vec_45		;45
+	.data.l	vec_46		;46
+	.data.l	vec_47		;47
+	.data.l	vec_48		;48
+	.data.l	vec_49		;49
+	.data.l	vec_50		;50
+	.data.l	vec_51		;51
+	.data.l	vec_52		;52
+	.data.l	vec_53		;53
+	.data.l	vec_54		;54
+	.data.l	vec_55		;55
+	.data.l	vec_56		;56
+	.data.l	vec_57		;57
+	.data.l	vec_58		;58
+	.data.l	vec_59		;59
+	.data.l	vec_60		;60
+	.data.l	vec_61		;61
+	.data.l	vec_62		;62
+	.data.l	vec_63		;63
+vec_7
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(7*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_8
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(8*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_9
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(9*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_10
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(10*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_11
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(11*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_12
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(12*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_13
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(13*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_14
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(14*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_15
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(15*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_16
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(16*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_17
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(17*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_18
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(18*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_19
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(19*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_20
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(20*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_21
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(21*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_22
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(22*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_23
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(23*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_24
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(24*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_25
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(25*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_26
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(26*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_27
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(27*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_28
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(28*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_29
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(29*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_30
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(30*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_31
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(31*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_32
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(32*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_33
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(33*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_34
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(34*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_35
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(35*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_36
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(36*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_37
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(37*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_38
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(38*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_39
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(39*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_40
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(40*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_41
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(41*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_42
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(42*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_43
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(43*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_44
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(44*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_45
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(45*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_46
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(46*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_47
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(47*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_48
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(48*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_49
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(49*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_50
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(50*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_51
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(51*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_52
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(52*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_53
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(53*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_54
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(54*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_55
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(55*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_56
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(56*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_57
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(57*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_58
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(58*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_59
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(59*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_60
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(60*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_61
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(61*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_62
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(62*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+vec_63
+	subs	#4,sp
+	stc.w	ccr,@-sp	;2
+	push	er0		;4
+	mov.l	@load_top+(63*4),er0
+	mov.l	er0,@(4+2,sp)
+	pop	er0
+	ldc.w	@sp+,ccr
+	rts
+;c; .aendi
+
+	;///////////////////
+	;/// down loader ///
+	;///////////////////
+
+	.section	P, CODE, ALIGN=2
+
+	.import	stack_init, hard_init, pl_sci_brr
+
+pl_start:
+	mov.l	#stack_init,sp	; stack set
+	orc	#B'11000000,ccr	; interrupt disable
+	jsr	@hard_init	; user system setup
+
+	;* SCI pre-initialize *
+	mov.b	#B'00000000,r0l	; TIE=0,RIE=0,TE=0,RE=0,MPIE=0,TEIE=0,CKE=00
+	mov.b	r0l,@SCRx:8
+	mov.b	#B'00000000,r0l	; C/A=0,CHR=0,PE=0,O/E=0,STOP=0,MP=0,CKS=00
+	mov.b	r0l,@SMRx:8
+	mov.b	#pl_sci_brr,r0l ;[example] clock=16MHz,n=0,B=38400bit/s
+	mov.b	r0l,@BRRx:8	; pl_sci_brr .equ (16*1000000/(32*38400))-1
+
+	;* 1bit wait *
+	inc.b	r0l		; for -1
+	mov.b	#32/(2+2),r0h
+	mulxu.b	r0h,r0
+pl_start_0
+	dec.w	#1,r0		; 2 state
+	bne	pl_start_0:8	; 2 state
+
+	;* SCI post-initialize *
+	bclr	RDRFx
+	bclr	ORERx
+	bclr	FERx
+	bclr	PERx
+	mov.b	#B'00110000,r0l	; TIE=0,RIE=0,TE=1,RE=1,MPIE=0,TEIE=0,CKE=00
+	mov.b	r0l,@SCRx:8
+
+	bra	pl_idle:8
+
+	;************
+	;*** idle ***
+	;************
+	; stack 24(=4+20)
+
+pl_idle:
+	mov.l	#pl_start_msg,er1
+pl_idle_0
+	bsr	pl_puts
+pl_idle_0a
+	bsr	pl_getc
+	bcc	pl_idle_0a:8
+	cmp.b	#"G",r0l
+	beq	pl_idle_G:8
+	cmp.b	#"S",r0l
+	beq	pl_idle_S:8
+	cmp.b	#LF,r0l
+	beq	pl_idle_0a:8	; for (CR -> CR,LF),(CR,LF -> CR,LF)
+	cmp.b	#CR,r0l
+	beq	pl_idle_1c:8
+	bsr	pl_putc
+pl_idle_1b
+	mov.l	#pl_error_msg,er1
+	bra	pl_idle_0:8
+pl_idle_1c
+	mov.l	#pl_prompt_msg,er1
+	bra	pl_idle_0:8
+	;* GO *
+pl_idle_G
+	bsr	pl_putc
+pl_idle_Ga
+	bsr	pl_getche
+	bcc	pl_idle_Ga:8
+	cmp.b	#CR,r0l
+	bne	pl_idle_1b:8	; cancel
+pl_idle_Gb
+	bld	TENDx
+	bcc	pl_idle_Gb:8
+	mov.b	#B'00000000,r0l	; TIE=0,RIE=0,TE=0,RE=0,MPIE=0,TEIE=0,CKE=00
+	mov.b	r0l,@SCRx:8
+	mov.l	@load_top,er0
+	jmp	@er0
+	;* S format *
+pl_idle_S
+	bsr	pl_Sformat	;<ret> cary=1:ok,0:ng,er1=message
+	bcs	pl_idle_0:8
+	bsr	pl_puts
+	;* error loop *
+pl_idle_Sa
+	bra	pl_idle_Sa:8
+
+	;/// program load S format ///
+	; S0... start
+	; S1... data (address 2byte)
+	; S2... data (address 3byte)
+	; S3... data (address 4byte)
+	; S7... end (address 4byte ?)
+	; S8... end (address 3byte ?)
+	; S9... end (address 2byte ?)
+CHKSUM	.equ	H'ff	;(AKI-H8 assembler and C compiler then H'00) + 00/11/15
+	; stack 20(=4+16)
+pl_Sformat:
+	bsr	pl_Sformat_getc
+	bcc	pl_Sformat_0b:8	; serial error !
+	cmp.b	#"0",r0l
+	beq	pl_Sformat_1:8	; ok !
+	;* error *
+pl_Sformat_0
+	mov.l	#pl_Sformat_error_msg,er1
+pl_Sformat_0a
+	andc	#B'11111110,ccr
+pl_Sformat_0b
+	rts
+	;* S0... *
+pl_Sformat_1
+	bsr	pl_Sformat_dmy
+	bcc	pl_Sformat_0b:8	; error !
+	cmp.b	#CHKSUM,r0l			;* 0 -> CHKSUM 2000/11/15
+	beq	pl_Sformat_2:8
+	mov.l	#pl_Sformat_sum_error_msg,er1
+	bra	pl_Sformat_0b:8	; check sum error !
+	;* next line *
+pl_Sformat_2
+	bsr	pl_Sformat_getc
+	bcc	pl_Sformat_0b:8	; serial error !
+	cmp.b	#" ",r0l
+	blo	pl_Sformat_2:8	; control code !
+	cmp.b	#"S",r0l
+	bne	pl_Sformat_0:8	; format error !
+	;* S *
+	bsr	pl_Sformat_getc
+	bcc	pl_Sformat_0b:8	; serial error !
+	cmp.b	#"1",r0l
+	beq	pl_Sformat_S1:8
+	cmp.b	#"2",r0l
+	beq	pl_Sformat_S2:8
+	cmp.b	#"3",r0l
+	beq	pl_Sformat_S3:8
+	cmp.b	#"7",r0l
+	beq	pl_Sformat_S7:8
+	cmp.b	#"8",r0l
+	beq	pl_Sformat_S8:8
+	cmp.b	#"9",r0l
+	beq	pl_Sformat_S9:8
+	bra	pl_Sformat_0:8	; unknown format error !
+	;* S1... *
+pl_Sformat_S1
+	;* S2... *
+pl_Sformat_S2
+	;* S3... *
+pl_Sformat_S3
+	add.b	#-"0"+1,r0l	; "1" -> 2, "2" -> 3, "3" -> 4
+	bsr	pl_Sformat_dwr
+	bcc	pl_Sformat_0b:8	; error !
+	cmp.b	#CHKSUM,r0l			;* 0 -> CHKSUM 2000/11/15
+	bne	pl_Sformat_S3a:8
+	mov.b	#".",r0l	; for download indicator
+	bsr	pl_putc		;
+	bra	pl_Sformat_2
+pl_Sformat_S3a
+	mov.l	#pl_Sformat_sum_error_msg,er1
+	bra	pl_Sformat_0b:8	; check sum error !
+	;* S7... *
+pl_Sformat_S7
+	;* S8... *
+pl_Sformat_S8
+	;* S9... *
+pl_Sformat_S9
+	bsr	pl_Sformat_dmy
+	bcc	pl_Sformat_0b:8	; error !
+	cmp.b	#CHKSUM,r0l			;* 0 -> CHKSUM 2000/11/15
+	bne	pl_Sformat_S3a:8
+	mov.l	#pl_Sformat_complete_msg,er1
+	orc	#B'00000001,ccr
+	rts
+
+;- program load S format get character -
+; entry	 none.
+; retrun cary=1:ok(r0l=data),0:error(er1=error message top address)
+; break	 r0l,er1(error)
+; stack  4(=0+4+0)
+pl_Sformat_getc:
+	bsr	pl_getc
+	bcs	pl_Sformat_getc_0:8
+	beq	pl_Sformat_getc:8
+	;* serial error *
+	mov.l	#pl_sci_error_msg,er1
+pl_Sformat_getc_0
+	rts
+
+;- program load S format get character hex byte -
+; entry	 none.
+; retrun cary=1:ok(r0l=data),0:error(er1=error message top address)
+; break	 r0,er1(error)
+; stack	 12(=0+4+8)
+pl_Sformat_getchb:
+	mov.b	#H'ff,r0h
+	bsr	pl_Sformat_getchb_1:8
+	bcc	pl_Sformat_getchb_0:8	;(r0h=H'ff then 1st byte error)
+	shll.b	r0l
+	shll.b	r0l
+	shll.b	r0l
+	shll.b	r0l
+	mov.b	r0l,r0h
+	bsr	pl_Sformat_getchb_1:8
+	bcc	pl_Sformat_getchb_0:8	;(r0h=H'?0 then 2nd byte error)
+	or.b	r0h,r0l
+pl_Sformat_getchb_0
+	rts
+; stack 8(=0+4+4)
+pl_Sformat_getchb_1
+	bsr	pl_Sformat_getc
+	bcc	pl_Sformat_getchb_1e:8	; serial error !
+	cmp.b	#"f",r0l
+	bhi	pl_Sformat_getchb_1a:8	; not hex data !
+	cmp.b	#"a",r0l
+	bhs	pl_Sformat_getchb_1b:8
+	cmp.b	#"F",r0l
+	bhi	pl_Sformat_getchb_1a:8	; not hex data !
+	cmp.b	#"A",r0l
+	bhs	pl_Sformat_getchb_1c:8
+	cmp.b	#"9",r0l
+	bhi	pl_Sformat_getchb_1a:8	; not hex data !
+	cmp.b	#"0",r0l
+	bhs	pl_Sformat_getchb_1d:8
+pl_Sformat_getchb_1a
+	mov.l	#pl_Sformat_error_msg,er1
+	andc	#B'11111110,ccr	; cary=0
+	orc	#B'00000100,ccr	; zero=1
+	bra	pl_Sformat_getchb_1e:8
+pl_Sformat_getchb_1b
+	add.b	#-"a"+"A",r0l
+pl_Sformat_getchb_1c
+	add.b	#-"A"+"0"+10,r0l
+pl_Sformat_getchb_1d
+	add.b	#-"0",r0l
+pl_Sformat_getchb_1e
+	rts
+
+;- program load S format dummy read with sum -
+; entry	 none.
+; retrun cary=1:ok(r0l=sum),0:error(er1=error message top address)
+; break	 er0,er1(error)
+; stack  16(=0+4+12)
+pl_Sformat_dmy:
+	mov.w	r1,e0	; push r1
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dmy_1:8	; error !
+	mov.b	r0l,r1l
+	mov.b	r0l,r1h
+pl_Sformat_dmy_0
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dmy_1:8
+	add.b	r0l,r1l
+	dec.b	r1h
+	bne	pl_Sformat_dmy_0:8
+	mov.b	r1l,r0l
+	mov.w	e0,r1	; pop r1
+	orc	#B'00000001,ccr
+pl_Sformat_dmy_1
+	rts
+
+;- program load S format data write with sum -
+; entry	 r0l=address data count (2or3)
+; retrun cary=1:ok(r0l=sum),0:error(er1=error message top address)
+; break	 er0,er1(error)
+; stack  16(=0+4+12)
+pl_Sformat_dwr:
+	mov.b	r0l,r1l	; push r0l
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dwr_2 ;:8	; error !
+	cmp.b	r1l,r0l
+	bhi	pl_Sformat_dwr_0:8
+	mov.l	#pl_Sformat_error_msg,er1
+	andc	#B'11111110,ccr	; cary=0
+	orc	#B'00000100,ccr	; zero=1
+	bra	pl_Sformat_dwr_2 ;:8	; error !
+pl_Sformat_dwr_0
+	mov.b	r0l,r0h
+	mov.w	r0,e0	; e0h=sum,e0l=count
+	mov.b	r1l,r0l	; pop r0l
+	sub.l	er1,er1
+	cmp.b	#3,r0l
+	beq	pl_Sformat_dwr_0a:8
+	blo	pl_Sformat_dwr_0b:8
+	;* 4 *
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dwr_2:8	; error !
+	mov.b	r0l,r0h
+	mov.b	#0,r0l
+	mov.w	r0,e1	; H'XX------
+	add.w	e0,r0
+	dec.b	r0l
+	mov.w	r0,e0
+	;* 3 *
+pl_Sformat_dwr_0a
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dwr_2:8	; error !
+	mov.b	#0,r0h
+	or.w	r0,e1	; H'--XX----
+	mov.b	r0l,r0h
+	mov.b	#0,r0l
+	add.w	e0,r0
+	dec.b	r0l
+	mov.w	r0,e0
+	;* 2 *
+pl_Sformat_dwr_0b
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dwr_2:8	; error !
+	mov.b	r0l,r1h	; H'----XX--
+	mov.b	r0l,r0h
+	mov.b	#0,r0l
+	add.w	e0,r0
+	dec.b	r0l
+	mov.w	r0,e0
+	;* 1 *
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dwr_2:8	; error !
+	mov.b	r0l,r1l	; H'------XX
+	mov.b	r0l,r0h
+	mov.b	#0,r0l
+	add.w	e0,r0
+	dec.b	r0l
+pl_Sformat_dwr_1
+	mov.w	r0,e0
+	bsr	pl_Sformat_getchb
+	bcc	pl_Sformat_dwr_2:8
+	mov.b	r0l,@er1
+;c; .aif DWR_CMP eq 1
+	mov.b	@er1,r0h
+	cmp.b	r0l,r0h
+	beq	pl_Sformat_dwr_1a:8
+	mov.l	#pl_Sformat_write_error_msg,er1
+	andc	#B'11111110,ccr	; cary=0
+	orc	#B'00000100,ccr	; zero=1
+	bra	pl_Sformat_dwr_2:8	; error !
+pl_Sformat_dwr_1a
+;c; .aelse
+;c;	mov.b	r0l,r0h
+;c; .aendi
+	mov.b	#0,r0l
+	add.w	e0,r0
+	adds	#1,er1
+	dec.b	r0l
+	bne	pl_Sformat_dwr_1:8
+	mov.b	r0h,r0l
+	orc	#B'00000001,ccr
+pl_Sformat_dwr_2
+	rts
+
+	;////////////////////
+	;/// subroutine's ///
+	;////////////////////
+
+;- get character -
+; entry	 none.
+; return cary=1:get(r0=data),0:none.(zero=1:no error,0:error)
+; break	 r0l
+; stack	 0(=0+0+0)
+pl_getc:
+	mov.b	@SSRx:8,r0l
+	bld	#RDRFxB,r0l
+	and.b	#B'00111000,r0l
+	bne	pl_getc_1:8	; error !
+	bcc	pl_getc_0:8	; none. (zero=1)
+	mov.b	@RDRx:8,r0l
+	bclr	RDRFx
+pl_getc_0
+	rts
+pl_getc_1
+	bclr	RDRFx		; data lost !
+	bclr	ORERx
+	bclr	FERx
+	bclr	PERx
+	andc	#B'11111110,ccr	; cary clear
+	rts	;r0l=error bit pattern
+
+;- get character with echo -
+; entry	 none.
+; return cary=1:get(r0=data),0:none.(zero=1:no error,0:error)
+; break	 r0l
+; stack	 4(=0+4+0)
+pl_getche:
+	bsr	pl_getc
+	bcc	pl_getche_1:8
+	cmp.b	#LF,r0l
+	beq	pl_getche_0:8	; for (CR -> CR,LF),(CR,LF -> CR,LF)
+	bsr	pl_putc
+	cmp.b	#CR,r0l
+	bne	pl_getche_0:8
+	mov.b	#LF,r0l
+	bsr	pl_putc
+	mov.b	#CR,r0l
+pl_getche_0
+	orc	#B'00000001,ccr
+pl_getche_1
+	rts
+
+;- put character -
+; entry	 r0l=character
+; return none.
+; break	 none.
+; stack  0(=0+0+0)
+pl_putc:
+	bld	TDREx
+	bcc	pl_putc:8
+	mov.b	r0l,@TDRx:8
+	bclr	TDREx
+	rts
+
+;- put characters string -
+; entry	 er1=string data address top (null end)
+; return er1=null+1 address
+; break	 r0l,er1
+; stack	 4(=0+4+0)
+pl_puts:
+	mov.b	@er1+,r0l
+	beq	pl_puts_0:8
+	bsr	pl_putc
+	bra	pl_puts:8
+pl_puts_0
+	rts
+
+	;/////////////////
+	;/// message's ///
+	;/////////////////
+
+pl_start_msg
+	.sdata	<CR><LF>" *** Program Loader for H8/300H series Ver.0.01"
+	.sdata	" Copyright (C) 2000 by AKIYA ***"
+pl_prompt_msg
+	.sdataz	<CR><LF>">"
+pl_error_msg
+	.sdataz	<CR><LF>"?"<CR><LF>">"
+pl_sci_error_msg
+	.sdataz	<CR><LF>" serial receive error ! (must be reset)"
+pl_Sformat_error_msg
+	.sdataz	<CR><LF>" S format error ! (must be reset)"
+pl_Sformat_sum_error_msg
+	.sdataz	<CR><LF>" S format check sum error ! (must be reset)"
+pl_Sformat_write_error_msg
+	.sdataz	<CR><LF>" S format write error ! (must be reset)"
+pl_Sformat_complete_msg
+	.sdataz	<CR><LF>" S format receive complete !"
+	.align	2
+
+	.end	pl_start
+

@@ -1,0 +1,30 @@
+;
+;	user system initialize
+;
+
+;--- down loader serial rate ---
+;[example] clock=16MHz,n=0,B=38400bit/s
+	.export	pl_sci_brr
+pl_sci_brr .equ (16*1000000/(32*38400))-1
+
+;--- load area ---
+	.section	D, DATA, ALIGN=2
+	.export	load_top
+load_top
+
+;--- for stack initialize ---
+	.section	SE, DATA, ALIGN=2
+	.export	stack_init
+stack_init
+
+;--- system setup ---
+	.section	P, CODE, ALIGN=2
+	.export	hard_init
+hard_init:
+	;
+	; CPU mode,port,other setup and user system initialize
+	;
+	rts
+
+	.end
+

@@ -1,0 +1,38 @@
+### for MAKE Version 4.0  Copyright (c) 1987, 1996 Borland International ###
+
+#=== macro's ===
+ASM = A38H $<-CPU=300HA:24 #-DEBUG
+LNK = L38H -SUBCOMMAND=$&.sub #-DEBUG
+CNV = C38H $<
+#===============
+
+#=== roule's ===
+.mar.obj:
+	$(ASM) # > $&.tag
+.abs.mot:
+	$(CNV)
+#===============
+
+#--- link's ---
+USER = user.obj
+PL = pl.obj
+
+#--- final target ---
+pl.mot:	pl.abs
+
+#--- make .abs ---
+pl.abs:	$(PL) $(USER) makefile
+	copy &&!
+OUTPUT $&
+INPUT $(PL)
+INPUT $(USER)
+START V,P(0)
+START D(0FFEF10)
+START SE(0FFFF10)
+START DEBUG_SCI(0FFFFB8)
+PRINT $&
+EXIT
+! $&.sub > nul
+	$(LNK)
+
+
